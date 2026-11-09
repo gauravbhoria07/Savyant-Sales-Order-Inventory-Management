@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Product Catalog</h2>
+        <p class="text-muted mb-0">Manage products, pricing, stock levels and categories</p>
+    </div>
+    {% if user.is_admin %}
+    <div class="d-flex gap-2">
+        <a href="{% url 'masters:product_import_csv' %}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Import CSV
+        </a>
+        <a href="{% url 'masters:product_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Add Product
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search by code or name..." value="{{ query }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if user.is_admin %}
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Active</option>
+                    <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-md-{% if user.is_admin %}3{% else %}5{% endif %} d-flex gap-2">
+                <button type="submit" class="btn btn-secondary w-50">Filter</button>
+                <a href="{% url 'masters:product_list' %}" class="btn btn-outline-secondary w-50">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th class="text-end">Unit Price</th>
+                        <th class="text-center">Stock Qty</th>
+                        <th>Status</th>
+                        {% if user.is_admin %}
+                        <th class="text-end">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in page_obj %}
+                    <tr>
+                        <td class="fw-semibold text-primary font-monospace">{{ product.code }}</td>
+                        <td class="fw-semibold">{{ product.name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ product.category }}</span></td>
+                        <td class="text-end fw-semibold">₹{{ product.price }}</td>
+                        <td class="text-center">
+                            {% if product.stock_quantity <= 10 %}
+                                <span class="badge bg-danger-subtle text-danger fw-bold border border-danger">{{ product.stock_quantity }} (Low)</span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success fw-bold">{{ product.stock_quantity }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if product.status == 'ACTIVE' %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        {% if user.is_admin %}
+                        <td class="text-end">
+                            <a href="{% url 'masters:product_edit' product.id %}" class="btn btn-sm btn-outline-primary me-1" title="Edit Product">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'masters:product_delete' product.id %}" class="btn btn-sm btn-outline-danger" title="Delete Product">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if user.is_admin %}7{% else %}6{% endif %}" class="text-center py-4 text-muted">
+                            No products found matching your search.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+        <span class="text-muted small">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&category={{ category_filter }}&status={{ status_filter }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&category={{ category_filter }}&status={{ status_filter }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

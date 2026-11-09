@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Product{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i> Confirm Product Deletion</h5>
+            </div>
+            <div class="card-body p-4">
+                <p>Are you sure you want to delete product <strong>{{ product.code }} - {{ product.name }}</strong>?</p>
+                <div class="alert alert-warning small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Integrity Rule:</strong> Products referenced by past sales orders or stock movements cannot be deleted. If you no longer sell this product, please deactivate it instead.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'masters:product_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-danger">Yes, Delete Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
