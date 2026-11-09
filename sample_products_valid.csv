@@ -1,0 +1,7 @@
+product_code,product_name,category,price,stock_quantity,status
+PRD-101,Logitech Mechanical Keyboard,Accessories,2500.00,35,Active
+PRD-102,Wireless Optical Mouse,Accessories,650.00,80,Active
+PRD-103,27-inch 4K Gaming Monitor,Displays,24500.00,12,Active
+PRD-104,USB-C Multiport Adapter,Cables & Hubs,1200.00,45,Active
+PRD-105,Noise Cancelling Headset,Audio,4200.00,20,Active
+PRD-106,Legacy Serial Cable,Accessories,150.00,0,Inactive
