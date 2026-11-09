@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Orders{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Sales Orders</h2>
+        <p class="text-muted mb-0">
+            {% if user.is_admin %}
+                Manage all company sales orders across all users
+            {% else %}
+                Manage your created sales orders
+            {% endif %}
+        </p>
+    </div>
+    <a href="{% url 'sales:order_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Create New Order
+    </a>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search order # or customer..." value="{{ query }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="DRAFT" {% if status_filter == 'DRAFT' %}selected{% endif %}>Draft</option>
+                    <option value="CONFIRMED" {% if status_filter == 'CONFIRMED' %}selected{% endif %}>Confirmed</option>
+                    <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="customer" class="form-select">
+                    <option value="">All Customers</option>
+                    {% for c in customers %}
+                        <option value="{{ c.id }}" {% if customer_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary w-50">Filter</button>
+                <a href="{% url 'sales:order_list' %}" class="btn btn-outline-secondary w-50">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Orders Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th class="text-end">Subtotal</th>
+                        <th class="text-end">Disc %</th>
+                        <th class="text-end">Grand Total</th>
+                        <th>Status</th>
+                        {% if user.is_admin %}
+                        <th>Created By</th>
+                        {% endif %}
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in page_obj %}
+                    <tr>
+                        <td class="fw-semibold text-primary font-monospace">{{ order.order_number }}</td>
+                        <td class="fw-semibold">{{ order.customer.name }}</td>
+                        <td>{{ order.order_date|date:"d M Y" }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ order.items.count }} item(s)</span></td>
+                        <td class="text-end">₹{{ order.subtotal }}</td>
+                        <td class="text-end">{{ order.discount_percentage }}%</td>
+                        <td class="text-end fw-bold text-dark">₹{{ order.grand_total }}</td>
+                        <td>
+                            {% if order.status == 'CONFIRMED' %}
+                                <span class="badge bg-success">Confirmed</span>
+                            {% elif order.status == 'DRAFT' %}
+                                <span class="badge bg-secondary">Draft</span>
+                            {% else %}
+                                <span class="badge bg-danger">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        {% if user.is_admin %}
+                        <td class="small text-muted">{{ order.created_by.username }}</td>
+                        {% endif %}
+                        <td class="text-end">
+                            <a href="{% url 'sales:order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye me-1"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if user.is_admin %}10{% else %}9{% endif %}" class="text-center py-4 text-muted">
+                            No sales orders found matching your criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+        <span class="text-muted small">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status_filter }}&customer={{ customer_id }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status_filter }}&customer={{ customer_id }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

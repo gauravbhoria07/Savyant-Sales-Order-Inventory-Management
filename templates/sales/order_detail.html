@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Order {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-10">
+        <!-- Action & Navigation Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="{% url 'sales:order_list' %}" class="btn btn-outline-secondary btn-sm mb-2">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Orders
+                </a>
+                <h2 class="fw-bold mb-0">Sales Order: <span class="font-monospace text-primary">{{ order.order_number }}</span></h2>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <button type="button" class="btn btn-outline-dark btn-sm" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Print Order
+                </button>
+
+                {% if order.is_draft %}
+                    <!-- Confirm Button triggers modal -->
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                        <i class="bi bi-check-circle me-1"></i> Confirm Order
+                    </button>
+                    <!-- Cancel Draft Button triggers modal -->
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        <i class="bi bi-x-circle me-1"></i> Cancel Draft
+                    </button>
+                {% elif order.is_confirmed %}
+                    <!-- Cancel Confirmed Button triggers modal -->
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Cancel Order & Restore Stock
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Status Notice Banner -->
+        {% if order.is_draft %}
+        <div class="alert alert-secondary d-flex align-items-center shadow-sm mb-4">
+            <i class="bi bi-info-circle-fill fs-4 me-3 text-secondary"></i>
+            <div>
+                <strong>Status: Draft.</strong> Stock has not yet been deducted. Confirm this order to verify stock availability and deduct inventory.
+            </div>
+        </div>
+        {% elif order.is_confirmed %}
+        <div class="alert alert-success d-flex align-items-center shadow-sm mb-4">
+            <i class="bi bi-check-circle-fill fs-4 me-3 text-success"></i>
+            <div>
+                <strong>Status: Confirmed.</strong> This order is confirmed and read-only. Inventory stock has been deducted.
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-danger d-flex align-items-center shadow-sm mb-4">
+            <i class="bi bi-x-octagon-fill fs-4 me-3 text-danger"></i>
+            <div>
+                <strong>Status: Cancelled (Terminal).</strong> This order is closed and cannot be altered.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Order Information Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header py-3 bg-light">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-person-fill text-primary me-2"></i> Customer Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-1">{{ order.customer.name }}</h5>
+                        <p class="text-muted mb-2"><i class="bi bi-geo-alt me-1"></i> {{ order.customer.city }}</p>
+                        <div class="small">
+                            <div><strong>Mobile:</strong> {{ order.customer.mobile }}</div>
+                            <div><strong>Email:</strong> {{ order.customer.email|default:"Not specified" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header py-3 bg-light">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle-fill text-primary me-2"></i> Order Metadata</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row small g-2">
+                            <div class="col-6 text-muted">Order Date:</div>
+                            <div class="col-6 fw-semibold">{{ order.order_date|date:"d M Y" }}</div>
+                            <div class="col-6 text-muted">Created By:</div>
+                            <div class="col-6 fw-semibold">{{ order.created_by.username }} ({{ order.created_by.get_role_display }})</div>
+                            <div class="col-6 text-muted">Created Timestamp:</div>
+                            <div class="col-6">{{ order.created_at|date:"d M Y, H:i" }}</div>
+                            <div class="col-6 text-muted">Order Status:</div>
+                            <div class="col-6">
+                                {% if order.status == 'CONFIRMED' %}
+                                    <span class="badge bg-success">Confirmed</span>
+                                {% elif order.status == 'DRAFT' %}
+                                    <span class="badge bg-secondary">Draft</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Items Table -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header py-3 bg-light">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-list-check text-primary me-2"></i> Ordered Items</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Product Code</th>
+                                <th>Product Name</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-end">Rate Snapshot</th>
+                                <th class="text-end">Item Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td class="text-muted">{{ forloop.counter }}</td>
+                                <td class="font-monospace fw-semibold">{{ item.product.code }}</td>
+                                <td class="fw-semibold">{{ item.product.name }}</td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td class="text-end">₹{{ item.rate }}</td>
+                                <td class="text-end fw-semibold">₹{{ item.amount }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No items in this order.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Financial Summary Box -->
+            <div class="card-footer bg-light p-4">
+                <div class="row justify-content-end">
+                    <div class="col-md-5 col-lg-4">
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-muted">Subtotal:</span>
+                            <span class="fw-semibold">₹{{ order.subtotal }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-muted">Discount ({{ order.discount_percentage }}%):</span>
+                            <span class="text-danger fw-semibold">&minus; ₹{{ order.discount_amount }}</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between py-1 fs-5">
+                            <span class="fw-bold">Grand Total:</span>
+                            <span class="fw-bold text-primary">₹{{ order.grand_total }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Read-Only Badge Notice -->
+        {% if order.is_read_only %}
+        <div class="text-muted small text-center mb-5">
+            <i class="bi bi-lock-fill me-1"></i> This order has been finalized and its line items and totals cannot be edited.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal: Confirm Order -->
+{% if order.is_draft %}
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="confirmModalLabel"><i class="bi bi-check-circle me-2"></i> Confirm Sales Order</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>Are you sure you want to confirm order <strong>{{ order.order_number }}</strong>?</p>
+                <p class="small text-muted mb-0">
+                    The system will verify that stock is available for all products. If available, inventory will be deducted in an atomic transaction and recorded in the stock ledger.
+                </p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'sales:order_confirm' order.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success px-4">Yes, Confirm Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal: Cancel Order -->
+{% if not order.is_cancelled %}
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i> Cancel Sales Order</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>Are you sure you want to cancel order <strong>{{ order.order_number }}</strong>?</p>
+                {% if order.is_confirmed %}
+                <div class="alert alert-warning small mb-0">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    <strong>Stock Notice:</strong> This order was previously confirmed. Cancelling it will immediately <strong>restore all deducted quantities</strong> back to product stock.
+                </div>
+                {% else %}
+                <p class="small text-muted mb-0">Since this order is still in Draft, no inventory was deducted and no stock changes will be made.</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Go Back</button>
+                <form method="post" action="{% url 'sales:order_cancel' order.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger px-4">Yes, Cancel Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

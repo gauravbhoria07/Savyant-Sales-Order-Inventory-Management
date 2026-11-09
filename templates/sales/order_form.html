@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Sales Order{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-10">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h2 class="fw-bold mb-1">Create Sales Order</h2>
+                <p class="text-muted mb-0">Select an active customer and add items. Totals are calculated dynamically and verified securely on the server.</p>
+            </div>
+            <a href="{% url 'sales:order_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Orders
+            </a>
+        </div>
+
+        <!-- Dynamic Validation Alert Banner -->
+        <div id="validationAlert" class="alert alert-danger d-none shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="validationMessage">Validation error</span>
+        </div>
+
+        <form id="orderForm" method="post" novalidate>
+            {% csrf_token %}
+
+            <!-- Order Header Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header py-3 bg-light">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-person-badge text-primary me-2"></i> Order Header</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label for="customer_id" class="form-label fw-semibold">Select Customer <span class="text-danger">*</span></label>
+                            <select name="customer_id" id="customer_id" class="form-select form-select-lg" required>
+                                <option value="">-- Choose Active Customer --</option>
+                                {% for customer in customers %}
+                                    <option value="{{ customer.id }}">{{ customer.name }} &bull; {{ customer.city }} ({{ customer.mobile }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Only active customers are available for new orders.</div>
+                        </div>
+                        <div class="col-md-5">
+                            <label for="discountPercentage" class="form-label fw-semibold">Order Discount % (Max 20%)</label>
+                            <div class="input-group input-group-lg">
+                                <input type="number" step="0.01" min="0" max="20" name="discount_percentage" id="discountPercentage" class="form-control" value="0.00">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text">Allowed discount range: 0.00% &ndash; 20.00%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-cart-plus text-primary me-2"></i> Order Items</h5>
+                    <button type="button" id="addRowBtn" class="btn btn-sm btn-success">
+                        <i class="bi bi-plus-lg me-1"></i> Add Product Row
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="orderItemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Product <span class="text-danger">*</span></th>
+                                    <th class="text-center">Available Stock</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-center">Quantity <span class="text-danger">*</span></th>
+                                    <th class="text-end">Item Amount</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderItemsTableBody">
+                                <!-- Dynamic rows populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Totals & Summary Footer -->
+                <div class="card-footer bg-light p-4">
+                    <div class="row justify-content-end">
+                        <div class="col-md-5 col-lg-4">
+                            <div class="d-flex justify-content-between py-1">
+                                <span class="text-muted">Subtotal:</span>
+                                <span class="fw-semibold">₹<span id="subtotalDisplay">0.00</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1">
+                                <span class="text-muted">Discount Amount:</span>
+                                <span class="text-danger fw-semibold">&minus; ₹<span id="discountAmountDisplay">0.00</span></span>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between py-1 fs-5">
+                                <span class="fw-bold">Grand Total:</span>
+                                <span class="fw-bold text-primary">₹<span id="grandTotalDisplay">0.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-end gap-3 mb-5">
+                <a href="{% url 'sales:order_list' %}" class="btn btn-outline-secondary btn-lg px-4">Cancel</a>
+                <button type="submit" id="submitOrderBtn" class="btn btn-primary btn-lg px-5 fw-semibold shadow-sm">
+                    <i class="bi bi-check2-circle me-1"></i> Save as Draft
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pass active products catalog to client JavaScript
+    window.PRODUCTS_CATALOG = {{ products_catalog_json|safe }};
+</script>
+<script src="/static/js/order_form.js"></script>
+{% endblock %}
