@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock Movement Ledger{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Stock Movement Ledger</h2>
+        <p class="text-muted mb-0">Complete audit trail of all inventory dispatches, returns, additions and adjustments</p>
+    </div>
+    {% if user.is_admin %}
+    <a href="{% url 'inventory:stock_adjustment' %}" class="btn btn-primary">
+        <i class="bi bi-sliders me-1"></i> New Stock Adjustment
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filters Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <select name="product" class="form-select">
+                    <option value="">All Products</option>
+                    {% for p in products %}
+                        <option value="{{ p.id }}" {% if selected_product == p.id|stringformat:"s" %}selected{% endif %}>{{ p.code }} - {{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="type" class="form-select">
+                    <option value="">All Movement Types</option>
+                    {% for val, label in movement_types %}
+                        <option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-secondary w-100">Filter</button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'inventory:stock_movements' %}" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Movements Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product</th>
+                        <th>Type</th>
+                        <th class="text-center">Quantity Change</th>
+                        <th>Related Order</th>
+                        <th>Reason</th>
+                        <th>Recorded By</th>
+                        <th>Date & Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in page_obj %}
+                    <tr>
+                        <td class="text-muted">#{{ m.id }}</td>
+                        <td class="fw-semibold">{{ m.product.name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ m.get_movement_type_display }}</span></td>
+                        <td class="text-center">
+                            {% if m.quantity_change > 0 %}
+                                <span class="badge bg-success-subtle text-success fw-bold fs-6">+{{ m.quantity_change }}</span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger fw-bold fs-6">{{ m.quantity_change }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if m.related_order %}
+                                <a href="{% url 'sales:order_detail' m.related_order.id %}" class="font-monospace text-decoration-none">
+                                    {{ m.related_order.order_number }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">{{ m.reason }}</td>
+                        <td class="small text-muted">{{ m.created_by.username }}</td>
+                        <td class="small text-muted">{{ m.timestamp|date:"d M Y, H:i:s" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">No stock movement records found matching your filters.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+        <span class="text-muted small">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&product={{ selected_product }}&type={{ selected_type }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&product={{ selected_product }}&type={{ selected_type }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

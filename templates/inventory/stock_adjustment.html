@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock Adjustment{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header py-3 bg-light">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-sliders text-primary me-2"></i> Manual Stock Adjustment</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small">
+                    Admin users can manually adjust physical inventory levels. A mandatory reason is required, and adjustments that would produce negative stock are strictly rejected.
+                </p>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="product_id" class="form-label fw-semibold">Select Product <span class="text-danger">*</span></label>
+                        <select name="product_id" id="product_id" class="form-select" required>
+                            <option value="">-- Choose Product --</option>
+                            {% for p in products %}
+                                <option value="{{ p.id }}">{{ p.code }} - {{ p.name }} (Current Stock: {{ p.stock_quantity }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Adjustment Type <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="adjustment_type" id="typeIn" value="IN" checked>
+                                <label class="form-check-label text-success fw-semibold" for="typeIn">
+                                    <i class="bi bi-plus-circle me-1"></i> Stock In (Add)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="adjustment_type" id="typeOut" value="OUT">
+                                <label class="form-check-label text-danger fw-semibold" for="typeOut">
+                                    <i class="bi bi-dash-circle me-1"></i> Stock Out (Reduce)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
+                        <input type="number" name="quantity" id="quantity" class="form-control" min="1" step="1" placeholder="e.g. 10" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="reason" class="form-label fw-semibold">Reason for Adjustment <span class="text-danger">*</span></label>
+                        <textarea name="reason" id="reason" class="form-control" rows="3" placeholder="e.g., Physical count discrepancy, damaged goods write-off..." required></textarea>
+                        <div class="form-text">Mandatory audit reason recorded permanently in the stock movement ledger.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="bi bi-check2-circle me-1"></i> Apply Adjustment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Adjustments Ledger Panel -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i> Recent Stock Adjustments</h5>
+                <a href="{% url 'inventory:stock_movements' %}" class="btn btn-sm btn-outline-secondary">Full Ledger &rarr;</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Type</th>
+                                <th class="text-center">Quantity Change</th>
+                                <th>Reason</th>
+                                <th>User</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in recent_movements %}
+                            <tr>
+                                <td class="fw-semibold">{{ m.product.name }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ m.get_movement_type_display }}</span></td>
+                                <td class="text-center">
+                                    {% if m.quantity_change > 0 %}
+                                        <span class="badge bg-success-subtle text-success fw-bold">+{{ m.quantity_change }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger fw-bold">{{ m.quantity_change }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">{{ m.reason }}</td>
+                                <td class="small text-muted">{{ m.created_by.username }}</td>
+                                <td class="small text-muted">{{ m.timestamp|date:"d M Y, H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No stock movements recorded yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
