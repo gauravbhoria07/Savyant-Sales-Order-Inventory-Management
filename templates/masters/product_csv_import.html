@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Import Products via CSV{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i> CSV Product Import (Admin Only)</h5>
+                <a href="{% url 'masters:product_list' %}" class="btn btn-sm btn-outline-secondary">Back to Products</a>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted">
+                    Bulk-import products into the catalog. 
+                    <strong class="text-danger">All-or-Nothing Rule:</strong> If even a single row contains invalid data, duplicate codes, or negative values, the entire import will be rejected to preserve database integrity.
+                </p>
+
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2"><i class="bi bi-table me-1"></i> Required CSV Columns:</h6>
+                        <code class="d-block p-2 bg-white rounded border text-dark font-monospace mb-2">
+                            product_code,product_name,category,price,stock_quantity,status
+                        </code>
+                        <div class="small text-muted">
+                            <strong>Example row:</strong> <code>PRD-001,Keyboard,Accessories,1500,20,Active</code><br>
+                            Status must be <code>Active</code> or <code>Inactive</code>. Stock quantities and prices must be non-negative.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Messages Display -->
+                {% if errors %}
+                <div class="alert alert-danger shadow-sm mb-4">
+                    <h6 class="fw-bold alert-heading mb-2">
+                        <i class="bi bi-x-octagon-fill me-1"></i> Import Failed &mdash; {{ errors|length }} Error(s) Found:
+                    </h6>
+                    <p class="small mb-2">No products were imported. Please fix the following row errors and try again:</p>
+                    <ul class="mb-0 small ps-3">
+                        {% for err in errors %}
+                            <li>{{ err }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="csv_file" class="form-label fw-semibold">Select CSV File</label>
+                        <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Supports UTF-8 CSV files</span>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-upload me-1"></i> Upload and Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

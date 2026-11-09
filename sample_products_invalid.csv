@@ -1,0 +1,6 @@
+product_code,product_name,category,price,stock_quantity,status
+PRD-201,Ergonomic Office Chair,Furniture,8500.00,10,Active
+PRD-202,Standing Desk Converter,Furniture,-3500.00,5,Active
+PRD-203,Desk Cable Organizer,Accessories,250.00,-15,Active
+PRD-201,Duplicate Chair Code,Furniture,9000.00,8,Active
+PRD-204,Monitor Light Bar,Lighting,1800.00,25,PendingReview
