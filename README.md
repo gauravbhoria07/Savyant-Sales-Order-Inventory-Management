@@ -1,6 +1,6 @@
 # Sales Order & Inventory Management System
 
-A robust, beginner-friendly, production-ready Django web application developed for the **Savyant Systems Technical Assessment (Fresher / Trainee Software Developer)**.
+A robust, beginner-friendly, and well-tested Django web application developed for the **Savyant Systems Technical Assessment (Fresher / Trainee Software Developer)**.
 
 Built with Python 3.13, Django 5.2, Django REST Framework, and MySQL 8.0 (InnoDB), this system automates customer management, product cataloging, multi-item sales orders with server-calculated discounts, transactional concurrency-safe inventory tracking, comprehensive sales reports, CSV bulk imports, and authenticated REST APIs.
 

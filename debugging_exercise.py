@@ -30,7 +30,7 @@ def calculate_total(items):
 =============================================================================
 3. EDGE CASES & DEFENSIVE PROGRAMMING CONSIDERATIONS
 =============================================================================
-A production-ready financial function must safely handle:
+A robust financial calculation function must safely handle:
 1. Empty list: Returns Decimal('0.00') or 0 cleanly without errors.
 2. Missing keys ('qty' or 'rate'): Raises a descriptive ValueError or KeyError.
 3. Invalid quantities / rates (strings that cannot be converted, None): Raises ValueError.
