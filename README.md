@@ -408,13 +408,20 @@ All API endpoints require authentication (Session or Basic Auth).
 
 ## 8. Automated Testing
 
-### Test Suite Coverage (18 Comprehensive Tests):
-- **Calculations & Discounts:** Verifies multi-item order totaling, discount percentage application (0–20%), and `Decimal` rounding.
-- **Defensive Rejections:** Zero quantity, negative quantity, invalid discount (>20% or <0%), and duplicate products within an order are rejected.
-- **Stock Management:** Sufficient stock deduction, all-or-nothing rollback on insufficient stock, and idempotent repeated confirmation.
-- **Stock Restoration:** Cancelling confirmed orders restores stock once; cancelling draft orders does not change stock.
-- **Role Isolation:** Sales User accessing another user's order in web views or API is denied with `403 Forbidden`.
-- **CSV Import:** All-or-nothing rollback when an invalid row is present, and full import with opening stock when valid.
+### Test Suite Coverage (32 Comprehensive Tests):
+- **Calculations & Discounts (`sales/tests.py`):** Verifies multi-item order totaling, discount percentage application (0–20%), snapshot rate freezing, and `Decimal` rounding.
+- **Defensive Rejections (`sales/tests.py`):** Zero quantity, negative quantity, invalid discount (>20% or <0%), and duplicate products within an order are rejected.
+- **Stock Management (`inventory/tests.py`):** Sufficient stock deduction, all-or-nothing rollback on insufficient stock, and idempotent repeated confirmation.
+- **Stock Restoration (`inventory/tests.py`):** Cancelling confirmed orders restores stock once; cancelling draft orders does not change stock.
+- **Role Isolation & Auth (`accounts/tests.py`):** Password hashing checks, role properties, Sales User blocked from Admin customer/product/stock views with `403 Forbidden`, and unauthenticated API calls rejected with `401/403`.
+- **Sales User Order Ownership (`sales/tests.py`):** Sales User accessing another user's order in web views or API is denied with `403 Forbidden`.
+- **Safe Deletion & CSV Import (`masters/tests.py`):** Safe deletion restrictions prevent deleting referenced customers/products; all-or-nothing rollback when an invalid CSV row is present, and full import with opening stock when valid.
+- **Reports & Aggregation Regression (`reports/tests.py`):**
+  - **Identical Grand Totals Regression Test:** Verifies that multiple confirmed orders with identical grand totals are all included in customer total sales (not dropped by `DISTINCT`).
+  - **Zero-Order Customers:** Verifies customers with zero orders display count 0 and total 0.00.
+  - **Date Range Filters:** Verifies orders outside the date filter are excluded.
+  - **Draft/Cancelled Exclusion:** Verifies unconfirmed orders do not inflate report metrics.
+  - **Product Sales & Low Stock:** Verifies volume, gross value, and configurable threshold filtering.
 
 ### Running Automated Tests:
 ```bash

@@ -81,7 +81,7 @@ def customer_sales_summary(request):
     customers = Customer.objects.annotate(
         confirmed_order_count=Count('orders', filter=confirmed_filter, distinct=True),
         total_sales=Coalesce(
-            Sum('orders__grand_total', filter=confirmed_filter, distinct=True),
+            Sum('orders__grand_total', filter=confirmed_filter),
             Value(Decimal('0.00')),
             output_field=DecimalField(max_digits=12, decimal_places=2)
         )

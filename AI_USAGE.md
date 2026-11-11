@@ -46,8 +46,14 @@ In accordance with Part 14 of the Savyant Systems Technical Assignment guideline
 
 ## 5. Issues Identified and Corrected
 
-During development and review, the following notable issue was identified and corrected:
+During development, audit, and review, the following notable issues were identified and corrected:
 
+- **Issue: Undercounting Sales in Customer Sales Summary due to `distinct=True` on Monetary Sum:**
+  - *Context:* In `reports/views.py`, the Customer Sales Summary used `Sum('orders__grand_total', filter=confirmed_filter, distinct=True)`. In SQL, this translated to `SUM(DISTINCT grand_total)`, which improperly deduplicated monetary values whenever two different confirmed orders shared identical grand totals (e.g., two orders of ₹500.00 each summed to ₹500.00 instead of ₹1,000.00).
+  - *Correction:* Removed `distinct=True` from the `Sum` aggregate, ensuring all confirmed order grand totals are summed accurately while preserving `Count('orders', filter=confirmed_filter, distinct=True)` for distinct order counts and `Coalesce` for zero-order customers. Added automated regression test in `reports/tests.py` verifying identical grand-total summation.
+- **Issue: Fallback Django SECRET_KEY and Insecure DEBUG Default:**
+  - *Context:* `SECRET_KEY` had a hardcoded string fallback if omitted from environment variables, and `DEBUG` defaulted to `True`.
+  - *Correction:* Enforced strict environment configuration in `config/settings.py`: raised `ImproperlyConfigured` if `SECRET_KEY` is missing, and defaulted `DEBUG` to `False` unless explicitly set to `True` in `.env`.
 - **Issue: Deadlock Hazard During Concurrent Multi-Item Order Confirmation:**
   - *Context:* When confirming two orders simultaneously that contain the same products in different orders (e.g., Order A locks Product 1 then Product 2; Order B locks Product 2 then Product 1), a relational database deadlock (`MySQL 1213: Deadlock found when trying to get lock`) could occur.
   - *Correction:* In `inventory/services.py`, product locking was updated to always sort product IDs in ascending numerical order (`product_ids = sorted([item.product_id for item in items])`) prior to executing `Product.objects.select_for_update().filter(id__in=product_ids)`. Enforcing a deterministic locking order completely prevents circular wait deadlocks across concurrent user requests.
